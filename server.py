@@ -1,11 +1,9 @@
 from flask import Flask, request, render_template, render_template_string
 from vectorizer import *
-from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 PLACEHOLDER = "end_sentinel"
 TEMPLATE_FILE = 'start.html'
-soup = BeautifulSoup(open('templates/'+	TEMPLATE_FILE, 'r'))
 
 @app.route('/')
 def start():
@@ -14,31 +12,31 @@ def start():
 @app.route('/', methods=['POST'])
 def get_answer():
 	query = request.form['query']
-	q, a = return_top_result(query)
-	placeholder = soup.find("div", {"id": PLACEHOLDER})
-	p_question = soup.new_tag('p')
-	p_question.append(q)
-	p_answer = soup.new_tag('p')
-	p_answer.append(' '.join(a))
-	placeholder.insert_before(p_question)
-	placeholder.insert_before(p_answer)
-	return render_template_string(str(soup))
+	q, a = return_top_x_results(query, 5)
+	
+	return render_template(TEMPLATE_FILE, questions = q, answers = a, query_string=query)
 
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
 
 
-def return_top_result(query):
-	query_vector = vectorize(query)
+
+def return_top_x_results(query, x):
+	clean_query = stem(query)
+	print("1 "+clean_query)
+	query_vector = vectorize(clean_query)
+	# print("2 ",query_vector.toarray())
 	q_vectors, a_vectors = get_vectors()
 	question_results = multiply(query_vector, q_vectors)
 	answer_results = multiply(query_vector, a_vectors)
+	print("3 ",question_results.toarray())
+	print("4 ",answer_results.toarray())
 
 	question_scores_to_position_dict = score_to_position_dict(question_results)
 	answer_scores_to_position_dict = score_to_position_dict(answer_results)
-
-	top_question_index = top_x_hits_from_dict(1, question_scores_to_position_dict)[0]
-	question = get_questions()[top_question_index]
-	answer = get_answers()[top_question_index]
-	return question, answer
+	top_question_indices = top_x_hits_from_dict(x, question_scores_to_position_dict)
+	print("5 ",top_question_indices)
+	questions = [get_questions()[i] for i in top_question_indices]
+	answers = [''.join(get_answers()[i]) for i in top_question_indices]
+	return questions, answers

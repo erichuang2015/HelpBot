@@ -4,7 +4,19 @@
 </head>
 <body>
 	<div id="chat">
-		<div id="end_sentinel"/>
+	<p>
+		<font color="blue">{{query_string}}</font>
+	</p>
+	<ul>
+	{% for i in range(questions|length) %}
+		<li>
+			<font color="red">{{questions[i]}}</font>
+		</li>
+		<li>
+			<font color="green">{{answers[i]}}</font>
+		</li>
+	{% endfor %}
+	</ul>
 	</div>
 	<form method="post">
 		<input type="text" name="query">
